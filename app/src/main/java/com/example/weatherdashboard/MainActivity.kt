@@ -19,6 +19,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -107,6 +108,13 @@ fun WeatherDashboardScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary
             )
+        }
+
+        OutlinedButton(
+            onClick = { viewModel.toggleErrorSimulation() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "⚠️ Simulate Error")
         }
 
         // Отображение ошибки
