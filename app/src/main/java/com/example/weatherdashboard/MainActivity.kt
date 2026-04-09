@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.weatherdashboard.ui.theme.WeatherDashboardTheme
-import com.example.weatherdashboard.viewmodel.WeatherViewModel
+import com.example.weatherdashboard.vievmodel.WeatherViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
