@@ -24,7 +24,8 @@ class WeatherViewModel : ViewModel() {
         viewModelScope.launch {
             _weatherState.value = _weatherState.value.copy(
                 isLoading = true,
-                error = null
+                error = null,
+                loadingProgress = "Запуск загрузки..."
             )
 
             try {
@@ -41,13 +42,15 @@ class WeatherViewModel : ViewModel() {
                     humidity = humidity,
                     windSpeed = windSpeed,
                     isLoading = false,
-                    error = null
+                    error = null,
+                    loadingProgress = "Загрузка завершена!"
                 )
 
             } catch (e: Exception) {
                 _weatherState.value = _weatherState.value.copy(
                     isLoading = false,
-                    error = "Ошибка загрузки: ${e.message}"
+                    error = "Ошибка загрузки: ${e.message}",
+                    loadingProgress = ""
                 )
             }
         }
