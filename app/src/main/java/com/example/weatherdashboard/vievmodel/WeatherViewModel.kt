@@ -19,8 +19,48 @@ class WeatherViewModel : ViewModel() {
 
     init {
         loadWeatherData()
+        startAutoRefresh()
     }
-
+    /**
+     * Демонстрация работы диспетчеров корутин:
+     *
+     * ┌─ viewModelScope.launch { }
+     * │   Запускается на: Dispatchers.Main (по умолчанию для ViewModel)
+     * │
+     * │   ┌─ coroutineScope { }
+     * │   │   Группирует дочерние корутины, наследует Dispatchers.Main
+     * │   │
+     * │   │   ├─ async { repository.fetchTemperature() }
+     * │   │   │   Выполняется на: Dispatchers.IO (внутри репозитория)
+     * │   │   │   Имитация сетевого запроса (~2 секунды)
+     * │   │   │
+     * │   │   ├─ async { repository.fetchHumidity() }
+     * │   │   │   Выполняется на: Dispatchers.IO
+     * │   │   │   Имитация сетевого запроса (~1.5 секунды)
+     * │   │   │
+     * │   │   ├─ async { repository.fetchWindSpeed() }
+     * │   │   │   Выполняется на: Dispatchers.IO
+     * │   │   │   Имитация сетевого запроса (~1 секунда)
+     * │   │   │
+     * │   │   └─ calculateWeatherIndex(temp, humidity, wind)
+     * │   │       Выполняется на: Dispatchers.Default
+     * │   │       Тяжёлые вычисления (1_000_000 итераций)
+     * │   │       withContext(Dispatchers.Default) внутри функции
+     * │   │
+     * │   │   После завершения всех async:
+     * │   │   └─ _weatherState.value = WeatherData(...)
+     * │   │       Выполняется на: Dispatchers.Main
+     * │   │       Обновление UI (обязательно на Main!)
+     * │   │
+     * │   └─ Обработка ошибок в catch { }
+     * │       Также выполняется на Dispatchers.Main
+     * │
+     * └─ Результат:
+     *     • Все сетевые запросы выполняются параллельно (~2 сек вместо 4.5)
+     *     • Тяжёлые вычисления не блокируют UI-поток
+     *     • Обновление интерфейса происходит плавно
+     *     • Приложение остаётся отзывчивым при любой нагрузке
+     */
     fun loadWeatherData() {
         viewModelScope.launch {
             _weatherState.value = _weatherState.value.copy(
@@ -39,10 +79,22 @@ class WeatherViewModel : ViewModel() {
                     val humidity = humDeferred.await()
                     val windSpeed = windDeferred.await()
 
+                    // Новый код: вычисление индекса
+                    _weatherState.value = _weatherState.value.copy(
+                        loadingProgress = "Вычисление индекса погоды..."
+                    )
+
+                    val weatherIndex = repository.calculateWeatherIndex(
+                        temperature,
+                        humidity,
+                        windSpeed
+                    )
+
                     _weatherState.value = WeatherData(
                         temperature = temperature,
                         humidity = humidity,
                         windSpeed = windSpeed,
+                        weatherIndex = weatherIndex,
                         isLoading = false,
                         error = null,
                         loadingProgress = "Загрузка завершена!"
@@ -60,5 +112,14 @@ class WeatherViewModel : ViewModel() {
 
     fun toggleErrorSimulation() {
         repository.toggleErrorSimulation()
+    }
+
+    private fun startAutoRefresh() {
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(10000)
+                loadWeatherData()
+            }
+        }
     }
 }
