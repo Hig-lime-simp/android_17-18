@@ -9,7 +9,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 class WeatherViewModel : ViewModel() {
     private val repository = WeatherRepository()
@@ -79,7 +81,6 @@ class WeatherViewModel : ViewModel() {
                     val humidity = humDeferred.await()
                     val windSpeed = windDeferred.await()
 
-                    // Новый код: вычисление индекса
                     _weatherState.value = _weatherState.value.copy(
                         loadingProgress = "Вычисление индекса погоды..."
                     )
@@ -116,8 +117,12 @@ class WeatherViewModel : ViewModel() {
 
     private fun startAutoRefresh() {
         viewModelScope.launch {
-            while (true) {
-                kotlinx.coroutines.delay(10000)
+            flow {
+                while (true) {
+                    delay(10000) // 10 секунд
+                    emit(Unit)
+                }
+            }.collect {
                 loadWeatherData()
             }
         }
